@@ -1,10 +1,17 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { useAuthStore } from '@/stores';
 import type { LoadingScreenProps } from '@/navigation/types';
 
 export function LoadingScreen({ navigation }: LoadingScreenProps): React.JSX.Element {
-  const { isInitialized, user, initialize, signIn } = useAuthStore();
+  const { isInitialized, user, error, initialize, signIn, clearError } = useAuthStore();
+  const [signingIn, setSigningIn] = useState(false);
 
   useEffect(() => {
     // Initialize auth listener
@@ -21,16 +28,48 @@ export function LoadingScreen({ navigation }: LoadingScreenProps): React.JSX.Ele
         index: 0,
         routes: [{ name: 'Home' }],
       });
-    } else {
-      // No user, sign in anonymously
-      signIn().then(() => {
+    } else if (!error && !signingIn) {
+      // No user and no error, sign in anonymously
+      setSigningIn(true);
+      signIn()
+        .then(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        })
+        .catch(() => {
+          setSigningIn(false);
+        });
+    }
+  }, [isInitialized, user, error, signingIn, navigation, signIn]);
+
+  const handleRetry = () => {
+    clearError();
+    setSigningIn(true);
+    signIn()
+      .then(() => {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Home' }],
         });
+      })
+      .catch(() => {
+        setSigningIn(false);
       });
-    }
-  }, [isInitialized, user, navigation, signIn]);
+  };
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorTitle}>Something went wrong</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -45,5 +84,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
+    paddingHorizontal: 24,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
