@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "472051513894",
+    "project_id": "shoppingtogether-cf51a",
+    "storage_bucket": "shoppingtogether-cf51a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:472051513894:android:2653571cf17519497904e7",
+        "android_client_info": {
+          "package_name": "com.sluiba.shoppingtogether"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcjU9e1uSEoOAIBN9gjmSAXaoP0n9oHW8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

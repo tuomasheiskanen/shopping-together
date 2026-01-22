@@ -1,4 +1,4 @@
-package com.shoppingtogether
+package com.sluiba.shoppingtogether
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

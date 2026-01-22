@@ -1,0 +1,116 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Check if user is a participant of the list
+    function isParticipant(listId) {
+      return exists(/databases/$(database)/documents/lists/$(listId)/participants/$(request.auth.uid));
+    }
+
+    // Helper: Check if user is the owner of the list
+    function isOwner(listId) {
+      return get(/databases/$(database)/documents/lists/$(listId)).data.ownerId == request.auth.uid;
+    }
+
+    // Helper: Validate list document shape
+    function isValidList() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'ownerId', 'linkToken', 'createdAt', 'archived'])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && data.ownerId is string
+        && data.linkToken is string
+        && data.archived is bool;
+    }
+
+    // Helper: Validate item document shape
+    function isValidItem() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['text', 'completed', 'updatedAt'])
+        && data.text is string
+        && data.text.size() > 0
+        && data.text.size() <= 500
+        && data.completed is bool;
+    }
+
+    // Helper: Validate participant document shape
+    function isValidParticipant() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['joinedAt', 'type'])
+        && data.type in ['anonymous', 'account'];
+    }
+
+    // Lists collection
+    match /lists/{listId} {
+      // Anyone authenticated can create a list (they become the owner)
+      allow create: if isAuthenticated()
+        && isValidList()
+        && request.resource.data.ownerId == request.auth.uid;
+
+      // Participants can read the list
+      allow read: if isAuthenticated() && isParticipant(listId);
+
+      // Participants can update most fields, but only owner can change linkToken
+      allow update: if isAuthenticated()
+        && isParticipant(listId)
+        && isValidList()
+        && (
+          // Non-owners cannot change linkToken or ownerId
+          (!isOwner(listId) &&
+            request.resource.data.linkToken == resource.data.linkToken &&
+            request.resource.data.ownerId == resource.data.ownerId)
+          ||
+          // Owners can change anything
+          isOwner(listId)
+        );
+
+      // Only owner can delete the list
+      allow delete: if isAuthenticated() && isOwner(listId);
+
+      // Participants subcollection
+      match /participants/{participantId} {
+        // Anyone authenticated can read participants if they are a participant
+        allow read: if isAuthenticated() && isParticipant(listId);
+
+        // Users can add themselves as participants (for joining via link)
+        allow create: if isAuthenticated()
+          && participantId == request.auth.uid
+          && isValidParticipant();
+
+        // Participants cannot be updated or deleted in MVP
+        allow update, delete: if false;
+      }
+
+      // Items subcollection
+      match /items/{itemId} {
+        // Participants can read items
+        allow read: if isAuthenticated() && isParticipant(listId);
+
+        // Participants can create items
+        allow create: if isAuthenticated()
+          && isParticipant(listId)
+          && isValidItem();
+
+        // Participants can update items
+        allow update: if isAuthenticated()
+          && isParticipant(listId)
+          && isValidItem();
+
+        // Participants can delete items
+        allow delete: if isAuthenticated() && isParticipant(listId);
+      }
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
