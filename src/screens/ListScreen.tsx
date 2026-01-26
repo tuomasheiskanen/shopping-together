@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useListStore, useItemsStore } from '@/stores';
+import { useListStore, useItemsStore, useAuthStore } from '@/stores';
 import { createShareUrl } from '@/utils/deepLink';
 import {
   ItemRow,
@@ -23,7 +23,14 @@ import type { Item } from '@/types';
 
 export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.Element {
   const { listId } = route.params;
-  const { currentList, loadList, isLoading: listLoading, error: listError } = useListStore();
+  const {
+    currentList,
+    loadList,
+    isLoading: listLoading,
+    error: listError,
+    participants,
+    subscribeToParticipants,
+  } = useListStore();
   const {
     items,
     subscribeToItems,
@@ -34,6 +41,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     updateItem,
     addItem,
   } = useItemsStore();
+  const user = useAuthStore((state) => state.user);
 
   const [refreshing, setRefreshing] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -42,12 +50,14 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
   useEffect(() => {
     const unsubscribeList = loadList(listId);
     const unsubscribeItems = subscribeToItems(listId);
+    const unsubscribeParticipants = subscribeToParticipants(listId);
 
     return () => {
       unsubscribeList();
       unsubscribeItems();
+      unsubscribeParticipants();
     };
-  }, [listId, loadList, subscribeToItems]);
+  }, [listId, loadList, subscribeToItems, subscribeToParticipants]);
 
   useEffect(() => {
     if (currentList) {
@@ -62,6 +72,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     // Re-subscribe to refresh data
     const unsubscribeList = loadList(listId);
     const unsubscribeItems = subscribeToItems(listId);
+    const unsubscribeParticipants = subscribeToParticipants(listId);
 
     // Wait a bit for data to load
     setTimeout(() => {
@@ -71,8 +82,9 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     return () => {
       unsubscribeList();
       unsubscribeItems();
+      unsubscribeParticipants();
     };
-  }, [listId, loadList, subscribeToItems]);
+  }, [listId, loadList, subscribeToItems, subscribeToParticipants]);
 
   const handleAddItem = async (text: string) => {
     await addItem({ text });
@@ -114,12 +126,27 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     [handleToggleItem, handleDeleteItem, handleEditItem],
   );
 
+  // Calculate progress stats
+  const progressStats = useMemo(() => {
+    const total = items.length;
+    const completed = items.filter((i) => i.completed).length;
+    const percentage = total > 0 ? (completed / total) * 100 : 0;
+    return { total, completed, percentage };
+  }, [items]);
+
+  // Determine owner display text
+  const ownerText = useMemo(() => {
+    if (!currentList || !user) return '';
+    const isOwner = currentList.ownerId === user.uid;
+    return isOwner ? 'Created by You' : 'Shared with You';
+  }, [currentList, user]);
+
   const error = listError || itemsError;
 
   if (listLoading && !currentList) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#F5A998" />
       </View>
     );
   }
@@ -151,26 +178,52 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
   }
 
   const shareUrl = createShareUrl(currentList.linkToken);
+  const memberCount = participants.length;
 
   return (
     <GestureHandlerRootView style={styles.container}>
       <SyncStatusBar />
 
       <View style={styles.header}>
-        <Text style={styles.listName} numberOfLines={1}>
-          {currentList.name}
-        </Text>
-        <TouchableOpacity
-          onPress={() => setShowShare(true)}
-          style={styles.shareButton}
-        >
-          <Text style={styles.shareButtonText}>Share</Text>
-        </TouchableOpacity>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.listName} numberOfLines={1}>
+              {currentList.name}
+            </Text>
+            <Text style={styles.subtitle}>
+              {ownerText} • {memberCount} {memberCount === 1 ? 'member' : 'members'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowShare(true)}
+            style={styles.shareIconButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <View style={styles.shareIcon}>
+              <View style={styles.shareIconArrow} />
+              <View style={styles.shareIconBox} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            {progressStats.completed} OF {progressStats.total} ITEMS SECURED
+          </Text>
+          <View style={styles.progressBarBackground}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${progressStats.percentage}%` },
+              ]}
+            />
+          </View>
+        </View>
       </View>
 
       {itemsLoading && items.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#007AFF" />
+          <ActivityIndicator size="small" color="#F5A998" />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -187,7 +240,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#007AFF"
+              tintColor="#F5A998"
             />
           }
         />
@@ -215,7 +268,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
   loadingContainer: {
     flex: 1,
@@ -243,7 +296,7 @@ const styles = StyleSheet.create({
   retryButton: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F5A998',
     borderRadius: 8,
   },
   retryButtonText: {
@@ -252,33 +305,88 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  listName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  headerTitleContainer: {
     flex: 1,
     marginRight: 12,
   },
-  shareButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#007AFF',
-    borderRadius: 6,
-  },
-  shareButtonText: {
-    color: '#fff',
+  listName: {
+    fontSize: 22,
     fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  shareIconButton: {
+    padding: 8,
+  },
+  shareIcon: {
+    width: 22,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareIconArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#999',
+    position: 'absolute',
+    top: 0,
+  },
+  shareIconBox: {
+    width: 14,
+    height: 10,
+    borderWidth: 2,
+    borderTopWidth: 0,
+    borderColor: '#999',
+    borderRadius: 2,
+    position: 'absolute',
+    bottom: 0,
+  },
+  progressContainer: {
+    gap: 8,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    letterSpacing: 0.5,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#F5A998',
+    borderRadius: 4,
   },
   listContent: {
     flexGrow: 1,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   emptyContainer: {
     flex: 1,

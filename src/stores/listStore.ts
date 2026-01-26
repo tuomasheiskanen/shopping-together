@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { List, CreateListInput, UpdateListInput, ListWithStats } from '@/types';
+import { List, CreateListInput, UpdateListInput, ListWithStats, Participant } from '@/types';
 import * as listsService from '@/services/lists';
 import * as participantsService from '@/services/participants';
 import { useAuthStore } from './authStore';
@@ -7,6 +7,7 @@ import { useAuthStore } from './authStore';
 interface ListState {
   currentList: List | null;
   userLists: ListWithStats[];
+  participants: Participant[];
   isLoading: boolean;
   isLoadingLists: boolean;
   error: string | null;
@@ -25,6 +26,7 @@ interface ListActions {
   loadUserLists: () => Promise<void>;
   subscribeToUserLists: () => () => void;
   refreshUserLists: () => Promise<void>;
+  subscribeToParticipants: (listId: string) => () => void;
 }
 
 type ListStore = ListState & ListActions;
@@ -33,6 +35,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   // State
   currentList: null,
   userLists: [],
+  participants: [],
   isLoading: false,
   isLoadingLists: false,
   error: null,
@@ -190,7 +193,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   },
 
   clearList: () => {
-    set({ currentList: null, error: null });
+    set({ currentList: null, participants: [], error: null });
   },
 
   clearError: () => {
@@ -252,5 +255,19 @@ export const useListStore = create<ListStore>((set, get) => ({
     } catch {
       // Silently fail on refresh
     }
+  },
+
+  subscribeToParticipants: (listId: string) => {
+    const unsubscribe = participantsService.subscribeToParticipants(
+      listId,
+      (participants) => {
+        set({ participants });
+      },
+      (error) => {
+        console.warn('Failed to load participants:', error.message);
+      },
+    );
+
+    return unsubscribe;
   },
 }));

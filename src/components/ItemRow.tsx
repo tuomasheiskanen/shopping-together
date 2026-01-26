@@ -78,77 +78,92 @@ export function ItemRow({
   };
 
   return (
-    <Swipeable
-      ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      renderLeftActions={renderLeftActions}
-      friction={2}
-      rightThreshold={40}
-      leftThreshold={40}
-    >
-      <TouchableOpacity
-        style={styles.container}
-        onPress={onToggle}
-        onLongPress={onEdit}
-        activeOpacity={0.7}
+    <View style={styles.cardWrapper}>
+      <Swipeable
+        ref={swipeableRef}
+        renderRightActions={renderRightActions}
+        renderLeftActions={renderLeftActions}
+        friction={2}
+        rightThreshold={40}
+        leftThreshold={40}
       >
-        <View
-          style={[
-            styles.checkbox,
-            item.completed && styles.checkboxChecked,
-          ]}
+        <TouchableOpacity
+          style={[styles.container, item.completed && styles.containerCompleted]}
+          onPress={onToggle}
+          onLongPress={onEdit}
+          activeOpacity={0.7}
         >
-          {item.completed && <Text style={styles.checkmark}>✓</Text>}
-        </View>
-
-        <View style={styles.textContainer}>
-          <Text
+          <View
             style={[
-              styles.itemText,
-              item.completed && styles.itemTextCompleted,
+              styles.checkbox,
+              item.completed && styles.checkboxChecked,
             ]}
-            numberOfLines={2}
           >
-            {item.text}
-          </Text>
-          {item.quantity && item.quantity > 1 && (
-            <Text style={styles.quantityText}>Qty: {item.quantity}</Text>
-          )}
-        </View>
-
-        {(isPending || isOptimistic) && (
-          <View style={styles.syncIndicator}>
-            <ActivityIndicator size="small" color="#007AFF" />
+            {item.completed && <Text style={styles.checkmark}>✓</Text>}
           </View>
-        )}
-      </TouchableOpacity>
-    </Swipeable>
+
+          <View style={styles.textContainer}>
+            <Text
+              style={[
+                styles.itemText,
+                item.completed && styles.itemTextCompleted,
+              ]}
+              numberOfLines={2}
+            >
+              {item.text}
+            </Text>
+            {item.quantity && item.quantity > 1 && (
+              <Text style={[styles.quantityText, item.completed && styles.quantityTextCompleted]}>
+                Qty: {item.quantity}
+              </Text>
+            )}
+          </View>
+
+          {(isPending || isOptimistic) && (
+            <View style={styles.syncIndicator}>
+              <ActivityIndicator size="small" color="#F5A998" />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Swipeable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    marginHorizontal: 16,
+    marginVertical: 6,
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  containerCompleted: {
+    backgroundColor: '#fafafa',
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 2,
-    borderColor: '#ccc',
-    marginRight: 12,
+    borderColor: '#ddd',
+    marginRight: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#F5A998',
+    borderColor: '#F5A998',
   },
   checkmark: {
     color: '#fff',
@@ -171,6 +186,9 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
+  quantityTextCompleted: {
+    color: '#aaa',
+  },
   syncIndicator: {
     marginLeft: 8,
   },
@@ -178,6 +196,7 @@ const styles = StyleSheet.create({
     width: 80,
     justifyContent: 'center',
     alignItems: 'flex-end',
+    marginVertical: 6,
   },
   deleteButton: {
     backgroundColor: '#FF3B30',
@@ -185,6 +204,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 80,
     height: '100%',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
   deleteButtonText: {
     color: '#fff',
@@ -195,13 +216,16 @@ const styles = StyleSheet.create({
     width: 80,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    marginVertical: 6,
   },
   editButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F5A998',
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
     height: '100%',
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
   editButtonText: {
     color: '#fff',
