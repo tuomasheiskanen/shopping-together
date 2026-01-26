@@ -1,8 +1,9 @@
 import firestore from '@react-native-firebase/firestore';
-import { List, CreateListInput, UpdateListInput } from '@/types';
+import { List, CreateListInput, UpdateListInput, ListWithStats } from '@/types';
 import { generateToken } from '@/utils/generateToken';
 import { getCurrentUser } from './auth';
-import { addParticipant } from './participants';
+import { addParticipant, getParticipants } from './participants';
+import { getItemCounts } from './items';
 
 const listsCollection = firestore().collection('lists');
 
@@ -150,4 +151,120 @@ export function subscribeToList(
       }
     },
   );
+}
+
+/**
+ * Get all lists where a user is a participant
+ * Uses collection group query on 'participants' collection
+ */
+export async function getUserLists(userId: string): Promise<ListWithStats[]> {
+  // Query all participant documents where the user is a member
+  const participantsQuery = await firestore()
+    .collectionGroup('participants')
+    .where('userId', '==', userId)
+    .get();
+
+  const matchingDocs = participantsQuery.docs;
+
+  // Extract list IDs from the participant document paths
+  const listIds = matchingDocs.map(doc => {
+    // Path format: lists/{listId}/participants/{participantId}
+    const pathParts = doc.ref.path.split('/');
+    return pathParts[1]; // Get the listId
+  });
+
+  if (listIds.length === 0) {
+    return [];
+  }
+
+  // Fetch all list documents and their stats
+  const listsWithStatsOrNull = await Promise.all(
+    listIds.map(async (listId) => {
+      const listDoc = await listsCollection.doc(listId).get();
+      if (!listDoc.exists) {
+        return null;
+      }
+
+      const listData = listDoc.data();
+      const [participants, itemCounts] = await Promise.all([
+        getParticipants(listId),
+        getItemCounts(listId),
+      ]);
+
+      return {
+        id: listDoc.id,
+        ...listData,
+        participantCount: participants.length,
+        itemsTotal: itemCounts.total,
+        itemsCompleted: itemCounts.completed,
+        isOwner: listData?.ownerId === userId,
+      } as ListWithStats;
+    }),
+  );
+
+  // Filter out any null results and return
+  return listsWithStatsOrNull.filter((list): list is ListWithStats => list !== null);
+}
+
+/**
+ * Subscribe to real-time updates for all user's lists
+ * @returns Unsubscribe function
+ */
+export function subscribeToUserLists(
+  userId: string,
+  callback: (lists: ListWithStats[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  // Subscribe to changes in the user's participant documents
+  return firestore()
+    .collectionGroup('participants')
+    .where('userId', '==', userId)
+    .onSnapshot(
+      async (snapshot) => {
+        const matchingDocs = snapshot.docs;
+
+        // Extract list IDs
+        const listIds = matchingDocs.map(doc => {
+          const pathParts = doc.ref.path.split('/');
+          return pathParts[1];
+        });
+
+        if (listIds.length === 0) {
+          callback([]);
+          return;
+        }
+
+        // Fetch all lists with stats
+        const listsWithStatsOrNull = await Promise.all(
+          listIds.map(async (listId) => {
+            const listDoc = await listsCollection.doc(listId).get();
+            if (!listDoc.exists) {
+              return null;
+            }
+
+            const listData = listDoc.data();
+            const [participants, itemCounts] = await Promise.all([
+              getParticipants(listId),
+              getItemCounts(listId),
+            ]);
+
+            return {
+              id: listDoc.id,
+              ...listData,
+              participantCount: participants.length,
+              itemsTotal: itemCounts.total,
+              itemsCompleted: itemCounts.completed,
+              isOwner: listData?.ownerId === userId,
+            } as ListWithStats;
+          }),
+        );
+
+        callback(listsWithStatsOrNull.filter((list): list is ListWithStats => list !== null));
+      },
+      (error) => {
+        if (onError) {
+          onError(error);
+        }
+      },
+    );
 }

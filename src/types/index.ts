@@ -21,6 +21,7 @@ export interface Item {
 
 export interface Participant {
   id: string;
+  userId: string;
   joinedAt: FirebaseFirestoreTypes.Timestamp;
   type: 'anonymous' | 'account';
 }
@@ -89,6 +90,7 @@ export const itemConverter: FirestoreConverter<Item> = {
 
 export const participantConverter: FirestoreConverter<Participant> = {
   toFirestore: (participant) => ({
+    userId: participant.userId,
     joinedAt: participant.joinedAt,
     type: participant.type,
   }),
@@ -97,3 +99,15 @@ export const participantConverter: FirestoreConverter<Participant> = {
     ...snapshot.data(),
   } as Participant),
 };
+
+// Extended list type with stats for display
+export interface ListWithStats extends List {
+  participantCount: number;
+  itemsTotal: number;
+  itemsCompleted: number;
+  isOwner: boolean;
+  lastActivity?: FirebaseFirestoreTypes.Timestamp;
+}
+
+// Filter types for list display
+export type ListFilter = 'all' | 'shared' | 'personal' | 'recent';

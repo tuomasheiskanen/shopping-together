@@ -119,3 +119,22 @@ export function subscribeToItems(
       },
     );
 }
+
+/**
+ * Get item counts for a list (total and completed)
+ */
+export async function getItemCounts(listId: string): Promise<{ total: number; completed: number }> {
+  const snapshot = await getItemsCollection(listId).get();
+
+  let total = 0;
+  let completed = 0;
+
+  snapshot.docs.forEach((doc) => {
+    total++;
+    if (doc.data().completed) {
+      completed++;
+    }
+  });
+
+  return { total, completed };
+}

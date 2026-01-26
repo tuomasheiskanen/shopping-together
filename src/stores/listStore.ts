@@ -1,12 +1,14 @@
 import { create } from 'zustand';
-import { List, CreateListInput, UpdateListInput } from '@/types';
+import { List, CreateListInput, UpdateListInput, ListWithStats } from '@/types';
 import * as listsService from '@/services/lists';
 import * as participantsService from '@/services/participants';
 import { useAuthStore } from './authStore';
 
 interface ListState {
   currentList: List | null;
+  userLists: ListWithStats[];
   isLoading: boolean;
+  isLoadingLists: boolean;
   error: string | null;
 }
 
@@ -20,6 +22,9 @@ interface ListActions {
   joinList: (listId: string) => Promise<void>;
   clearList: () => void;
   clearError: () => void;
+  loadUserLists: () => Promise<void>;
+  subscribeToUserLists: () => () => void;
+  refreshUserLists: () => Promise<void>;
 }
 
 type ListStore = ListState & ListActions;
@@ -27,7 +32,9 @@ type ListStore = ListState & ListActions;
 export const useListStore = create<ListStore>((set, get) => ({
   // State
   currentList: null,
+  userLists: [],
   isLoading: false,
+  isLoadingLists: false,
   error: null,
 
   // Actions
@@ -188,5 +195,62 @@ export const useListStore = create<ListStore>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  loadUserLists: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) {
+      set({ userLists: [], isLoadingLists: false });
+      return;
+    }
+
+    set({ isLoadingLists: true, error: null });
+
+    try {
+      const lists = await listsService.getUserLists(user.uid);
+      set({ userLists: lists, isLoadingLists: false });
+    } catch (error) {
+      set({
+        isLoadingLists: false,
+        error: error instanceof Error ? error.message : 'Failed to load lists',
+      });
+    }
+  },
+
+  subscribeToUserLists: () => {
+    const user = useAuthStore.getState().user;
+    if (!user) {
+      set({ userLists: [], isLoadingLists: false });
+      return () => {};
+    }
+
+    set({ isLoadingLists: true, error: null });
+
+    const unsubscribe = listsService.subscribeToUserLists(
+      user.uid,
+      (lists) => {
+        set({ userLists: lists, isLoadingLists: false });
+      },
+      (error) => {
+        set({
+          isLoadingLists: false,
+          error: error.message || 'Failed to load lists',
+        });
+      },
+    );
+
+    return unsubscribe;
+  },
+
+  refreshUserLists: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    try {
+      const lists = await listsService.getUserLists(user.uid);
+      set({ userLists: lists });
+    } catch {
+      // Silently fail on refresh
+    }
   },
 }));

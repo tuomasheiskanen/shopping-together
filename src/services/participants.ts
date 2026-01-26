@@ -20,6 +20,7 @@ export async function addParticipant(
   const participantRef = getParticipantsCollection(listId).doc(userId);
 
   const participantData = {
+    userId, // Store userId as a field for collection group queries
     joinedAt: firestore.FieldValue.serverTimestamp(),
     type,
   };
