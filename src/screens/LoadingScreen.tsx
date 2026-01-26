@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/stores';
 import type { LoadingScreenProps } from '@/navigation/types';
 
@@ -22,21 +23,25 @@ export function LoadingScreen({ navigation }: LoadingScreenProps): React.JSX.Ele
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (user) {
-      // User is signed in, go to home
+    const navigateAfterAuth = async () => {
+      const hasSeenWelcome = await AsyncStorage.getItem('hasSeenWelcome');
+      const targetScreen = hasSeenWelcome === 'true' ? 'Home' : 'Welcome';
+
       navigation.reset({
         index: 0,
-        routes: [{ name: 'Home' }],
+        routes: [{ name: targetScreen }],
       });
+    };
+
+    if (user) {
+      // User is signed in, check if they've seen welcome
+      navigateAfterAuth();
     } else if (!error && !signingIn) {
       // No user and no error, sign in anonymously
       setSigningIn(true);
       signIn()
         .then(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Home' }],
-          });
+          navigateAfterAuth();
         })
         .catch(() => {
           setSigningIn(false);
@@ -44,19 +49,20 @@ export function LoadingScreen({ navigation }: LoadingScreenProps): React.JSX.Ele
     }
   }, [isInitialized, user, error, signingIn, navigation, signIn]);
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     clearError();
     setSigningIn(true);
-    signIn()
-      .then(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      })
-      .catch(() => {
-        setSigningIn(false);
+    try {
+      await signIn();
+      const hasSeenWelcome = await AsyncStorage.getItem('hasSeenWelcome');
+      const targetScreen = hasSeenWelcome === 'true' ? 'Home' : 'Welcome';
+      navigation.reset({
+        index: 0,
+        routes: [{ name: targetScreen }],
       });
+    } catch {
+      setSigningIn(false);
+    }
   };
 
   if (error) {

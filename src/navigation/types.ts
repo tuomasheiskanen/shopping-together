@@ -8,6 +8,9 @@ export type RootStackParamList = {
   // Loading screen shown during auth initialization
   Loading: undefined;
 
+  // Welcome screen for first-time users
+  Welcome: undefined;
+
   // Home screen for creating/joining lists
   Home: undefined;
 
@@ -28,6 +31,11 @@ export type RootStackParamList = {
 export type LoadingScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'Loading'
+>;
+
+export type WelcomeScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'Welcome'
 >;
 
 export type HomeScreenProps = NativeStackScreenProps<

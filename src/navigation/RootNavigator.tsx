@@ -5,6 +5,7 @@ import { RootStackParamList } from './types';
 
 // Placeholder screens - will be replaced with actual implementations
 import { LoadingScreen } from '@/screens/LoadingScreen';
+import { WelcomeScreen } from '@/screens/WelcomeScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ListScreen } from '@/screens/ListScreen';
 import { JoinScreen } from '@/screens/JoinScreen';
@@ -53,6 +54,14 @@ export function RootNavigator(): React.JSX.Element {
           component={LoadingScreen}
           options={{
             // Prevent going back to loading screen
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="Welcome"
+          component={WelcomeScreen}
+          options={{
+            // Prevent going back to welcome screen
             gestureEnabled: false,
           }}
         />

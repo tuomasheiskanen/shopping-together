@@ -12,6 +12,8 @@
 		48363423E797AE6E79322082 /* Pods_ShoppingTogether.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C17043730E5068E3ECE2FF7 /* Pods_ShoppingTogether.framework */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		92ECDED5F0404719817862AA /* DancingScript-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4D0D60C73FE4452B800C0999 /* DancingScript-Regular.ttf */; };
+		C73A20B8CF6149969C7AD8F6 /* DancingScript-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E966ACC9F9784EE699946626 /* DancingScript-Bold.ttf */; };
 		F1234567890ABCDEF1234567 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F1234567890ABCDEF1234568 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
@@ -23,8 +25,10 @@
 		1957F3567B571593EB737636 /* Pods-ShoppingTogether.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShoppingTogether.release.xcconfig"; path = "Target Support Files/Pods-ShoppingTogether/Pods-ShoppingTogether.release.xcconfig"; sourceTree = "<group>"; };
 		3C17043730E5068E3ECE2FF7 /* Pods_ShoppingTogether.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ShoppingTogether.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A62DD1DFFA6B31985C84E30 /* Pods-ShoppingTogether.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShoppingTogether.debug.xcconfig"; path = "Target Support Files/Pods-ShoppingTogether/Pods-ShoppingTogether.debug.xcconfig"; sourceTree = "<group>"; };
+		4D0D60C73FE4452B800C0999 /* DancingScript-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "DancingScript-Regular.ttf"; path = "../src/assets/fonts/DancingScript-Regular.ttf"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ShoppingTogether/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ShoppingTogether/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		E966ACC9F9784EE699946626 /* DancingScript-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "DancingScript-Bold.ttf"; path = "../src/assets/fonts/DancingScript-Bold.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F1234567890ABCDEF1234568 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "ShoppingTogether/GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -78,6 +82,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				A31BF4AB2DB14A2DAE5E205E /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -90,6 +95,16 @@
 				13B07F961A680F5B00A75B9A /* ShoppingTogether.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A31BF4AB2DB14A2DAE5E205E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E966ACC9F9784EE699946626 /* DancingScript-Bold.ttf */,
+				4D0D60C73FE4452B800C0999 /* DancingScript-Regular.ttf */,
+			);
+			name = Resources;
+			path = "";
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -166,6 +181,8 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				347FA9CA25E43CBB4A05F44E /* PrivacyInfo.xcprivacy in Resources */,
 				F1234567890ABCDEF1234567 /* GoogleService-Info.plist in Resources */,
+				C73A20B8CF6149969C7AD8F6 /* DancingScript-Bold.ttf in Resources */,
+				92ECDED5F0404719817862AA /* DancingScript-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
