@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F5A998',
   },
   saveButtonDisabled: {
     backgroundColor: '#ccc',

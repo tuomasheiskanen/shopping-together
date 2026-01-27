@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#F5A998',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   buttonContainer: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   shareButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F5A998',
   },
   shareButtonText: {
     fontSize: 16,
