@@ -44,6 +44,7 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          echo "Keystore created at: $(pwd)/android/app/release.keystore"
 
       - name: Set version from tag or input
         id: version
@@ -62,7 +63,7 @@ jobs:
       - name: Build Release AAB
         working-directory: android
         env:
-          ANDROID_KEYSTORE_FILE: app/release.keystore
+          ANDROID_KEYSTORE_FILE: release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -73,7 +74,7 @@ jobs:
       - name: Build Release APK
         working-directory: android
         env:
-          ANDROID_KEYSTORE_FILE: app/release.keystore
+          ANDROID_KEYSTORE_FILE: release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
