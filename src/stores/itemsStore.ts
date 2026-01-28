@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Item, CreateItemInput, UpdateItemInput } from '@/types';
 import * as itemsService from '@/services/items';
+import { useListStore } from './listStore';
 
 // Track pending operations for optimistic updates
 interface PendingOperation {
@@ -58,6 +59,11 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
         });
 
         set({ items: filteredItems, isLoading: false });
+
+        // Update list item counts in listStore
+        const itemsTotal = filteredItems.length;
+        const itemsCompleted = filteredItems.filter((item) => item.completed).length;
+        useListStore.getState().updateListItemCounts(listId, itemsTotal, itemsCompleted);
       },
       (error) => {
         set({

@@ -27,6 +27,7 @@ interface ListActions {
   subscribeToUserLists: () => () => void;
   refreshUserLists: () => Promise<void>;
   subscribeToParticipants: (listId: string) => () => void;
+  updateListItemCounts: (listId: string, itemsTotal: number, itemsCompleted: number) => void;
 }
 
 type ListStore = ListState & ListActions;
@@ -284,5 +285,13 @@ export const useListStore = create<ListStore>((set, get) => ({
     );
 
     return unsubscribe;
+  },
+
+  updateListItemCounts: (listId: string, itemsTotal: number, itemsCompleted: number) => {
+    const { userLists } = get();
+    const updatedLists = userLists.map((list) =>
+      list.id === listId ? { ...list, itemsTotal, itemsCompleted } : list
+    );
+    set({ userLists: updatedLists });
   },
 }));

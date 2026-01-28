@@ -47,7 +47,10 @@ export function AddItemModal({
     try {
       await onSubmit(trimmedText);
       setText('');
-      onClose();
+      // Keep modal open and re-focus input for adding more items
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
     } finally {
       setIsLoading(false);
     }
@@ -95,11 +98,11 @@ export function AddItemModal({
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={styles.doneButton}
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -168,14 +171,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  cancelButton: {
+  doneButton: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
-  cancelButtonText: {
+  doneButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#666',
