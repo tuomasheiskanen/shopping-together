@@ -87,14 +87,29 @@ export const useListStore = create<ListStore>((set, get) => ({
   },
 
   createList: async (input: CreateListInput) => {
-    const { isLoading } = get();
+    const { isLoading, userLists } = get();
     if (isLoading) return null;
 
     set({ isLoading: true, error: null });
 
     try {
       const list = await listsService.createList(input);
-      set({ currentList: list, isLoading: false });
+
+      // Create a ListWithStats object for the new list
+      const newListWithStats: ListWithStats = {
+        ...list,
+        participantCount: 1,
+        itemsTotal: 0,
+        itemsCompleted: 0,
+        isOwner: true,
+      };
+
+      // Add to userLists immediately so it appears without waiting for subscription
+      set({
+        currentList: list,
+        userLists: [newListWithStats, ...userLists],
+        isLoading: false
+      });
       return list.id;
     } catch (error) {
       set({

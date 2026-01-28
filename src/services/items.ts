@@ -82,7 +82,7 @@ export async function toggleItemCompleted(
  */
 export async function getItems(listId: string): Promise<Item[]> {
   const snapshot = await getItemsCollection(listId)
-    .orderBy('updatedAt', 'desc')
+    .orderBy('updatedAt', 'asc')
     .get();
 
   return snapshot.docs.map((doc) => ({
@@ -93,7 +93,7 @@ export async function getItems(listId: string): Promise<Item[]> {
 
 /**
  * Subscribe to real-time updates for items
- * Items are ordered by updatedAt descending (newest first)
+ * Items are ordered by updatedAt ascending (oldest first)
  * @returns Unsubscribe function
  */
 export function subscribeToItems(
@@ -102,7 +102,7 @@ export function subscribeToItems(
   onError?: (error: Error) => void,
 ): () => void {
   return getItemsCollection(listId)
-    .orderBy('updatedAt', 'desc')
+    .orderBy('updatedAt', 'asc')
     .onSnapshot(
       (snapshot) => {
         const items = snapshot.docs.map((doc) => ({

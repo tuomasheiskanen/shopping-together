@@ -93,7 +93,7 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
     });
 
     set({
-      items: [optimisticItem, ...items],
+      items: [...items, optimisticItem],
       pendingOperations: newPendingOps,
       error: null,
     });
@@ -210,7 +210,7 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
         items: [...currentItems, originalItem].sort((a, b) => {
           const aTime = a.updatedAt?.toDate?.()?.getTime() || 0;
           const bTime = b.updatedAt?.toDate?.()?.getTime() || 0;
-          return bTime - aTime;
+          return aTime - bTime;
         }),
         pendingOperations: updatedPendingOps,
         error: error instanceof Error ? error.message : 'Failed to delete item',

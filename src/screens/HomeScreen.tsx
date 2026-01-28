@@ -5,13 +5,13 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useListStore } from '@/stores';
-import { ListCard, FilterTabs, JoinListModal, CreateListModal } from '@/components';
+import { ListCard, FilterTabs, CreateListModal } from '@/components';
 import type { HomeScreenProps } from '@/navigation/types';
 import type { ListFilter, ListWithStats } from '@/types';
 
@@ -26,8 +26,8 @@ const COLORS = {
 };
 
 export function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<ListFilter>('all');
-  const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const {
@@ -36,8 +36,6 @@ export function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
     isLoading,
     subscribeToUserLists,
     createList,
-    loadListByToken,
-    joinList,
     refreshUserLists,
   } = useListStore();
 
@@ -46,20 +44,29 @@ export function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
     return () => unsubscribe();
   }, [subscribeToUserLists]);
 
+  // Refresh lists when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshUserLists();
+    }, [refreshUserLists])
+  );
+
   const filteredLists = useMemo(() => {
+    const sortByCreatedDesc = (lists: ListWithStats[]) =>
+      [...lists].sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      });
+
     switch (filter) {
       case 'shared':
-        return userLists.filter((list) => list.participantCount > 1);
+        return sortByCreatedDesc(userLists.filter((list) => list.participantCount > 1));
       case 'personal':
-        return userLists.filter((list) => list.participantCount === 1);
+        return sortByCreatedDesc(userLists.filter((list) => list.participantCount === 1));
       case 'recent':
-        return [...userLists].sort((a, b) => {
-          const aTime = a.createdAt?.toMillis?.() ?? 0;
-          const bTime = b.createdAt?.toMillis?.() ?? 0;
-          return bTime - aTime;
-        });
       default:
-        return userLists;
+        return sortByCreatedDesc(userLists);
     }
   }, [userLists, filter]);
 
@@ -79,23 +86,6 @@ export function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
       }
     },
     [createList, navigation],
-  );
-
-  const handleJoinList = useCallback(
-    async (code: string) => {
-      await loadListByToken(code);
-      const list = useListStore.getState().currentList;
-
-      if (list) {
-        await joinList(list.id);
-        setShowJoinModal(false);
-        await refreshUserLists();
-        navigation.navigate('List', { listId: list.id });
-      } else {
-        Alert.alert('Error', 'List not found. Check the code and try again.');
-      }
-    },
-    [loadListByToken, joinList, navigation, refreshUserLists],
   );
 
   const renderListCard = useCallback(
@@ -147,33 +137,18 @@ export function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
         />
       )}
 
-      {/* Bottom Buttons */}
-      <View style={styles.bottomButtons}>
-        <TouchableOpacity
-          style={styles.joinButton}
-          onPress={() => setShowJoinModal(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.joinButtonIcon}>👥</Text>
-          <Text style={styles.joinButtonText}>Join List</Text>
-        </TouchableOpacity>
+      {/* Create Button */}
+      <View style={[styles.createButtonContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <TouchableOpacity
           style={styles.createButton}
           onPress={() => setShowCreateModal(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.createButtonIcon}>⊕</Text>
-          <Text style={styles.createButtonText}>Create New List</Text>
+          <Text style={styles.createButtonIcon}>+</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Modals */}
-      <JoinListModal
-        visible={showJoinModal}
-        onClose={() => setShowJoinModal(false)}
-        onJoin={handleJoinList}
-        isLoading={isLoading}
-      />
+      {/* Modal */}
       <CreateListModal
         visible={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -228,7 +203,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 100,
+    paddingBottom: 90,
     flexGrow: 1,
   },
   emptyState: {
@@ -253,57 +228,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  bottomButtons: {
+  createButtonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'android' ? 24 : 32,
-    paddingTop: 12,
-    gap: 12,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.buttonBorder,
-  },
-  joinButton: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: COLORS.buttonBorder,
-    backgroundColor: COLORS.white,
-    gap: 8,
-  },
-  joinButtonIcon: {
-    fontSize: 16,
-  },
-  joinButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.headlineText,
   },
   createButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
+    width: 60,
+    height: 60,
     borderRadius: 30,
     backgroundColor: COLORS.coral,
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   createButtonIcon: {
-    fontSize: 16,
+    fontSize: 32,
     color: COLORS.white,
-  },
-  createButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontWeight: '300',
+    marginTop: -2,
   },
 });

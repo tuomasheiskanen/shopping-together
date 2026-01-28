@@ -28,16 +28,6 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps): React.JSX.Ele
     });
   };
 
-  const handleJoinNow = async () => {
-    // For now, both buttons go to Home - the Join functionality
-    // can be accessed from the Home screen
-    await AsyncStorage.setItem('hasSeenWelcome', 'true');
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Home' }],
-    });
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Gradient background overlay */}
@@ -82,14 +72,6 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps): React.JSX.Ele
           activeOpacity={0.8}
         >
           <Text style={styles.getStartedButtonText}>Get Started</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.joinNowButton}
-          onPress={handleJoinNow}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.joinNowButtonText}>Join Now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -188,19 +170,6 @@ const styles = StyleSheet.create({
   },
   getStartedButtonText: {
     color: COLORS.white,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  joinNowButton: {
-    backgroundColor: COLORS.white,
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.buttonBorder,
-  },
-  joinNowButtonText: {
-    color: COLORS.headlineText,
     fontSize: 18,
     fontWeight: '600',
   },

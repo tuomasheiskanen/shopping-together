@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 90,
   },
   emptyContainer: {
     flex: 1,
