@@ -115,4 +115,4 @@ jobs:
           packageName: com.sluiba.shoppingtogether
           releaseFiles: app-release.aab
           track: internal
-          status: completed
+          status: draft
