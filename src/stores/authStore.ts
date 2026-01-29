@@ -13,6 +13,7 @@ interface AuthActions {
   initialize: () => () => void;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  setDisplayName: (name: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -76,6 +77,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to sign out',
       });
+    }
+  },
+
+  setDisplayName: async (name: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authService.updateDisplayName(name);
+      const { user } = get();
+      if (user) {
+        set({ user: { ...user, displayName: name }, isLoading: false });
+      }
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to set display name',
+      });
+      throw error;
     }
   },
 

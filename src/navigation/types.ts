@@ -11,6 +11,9 @@ export type RootStackParamList = {
   // Welcome screen for first-time users
   Welcome: undefined;
 
+  // User onboarding screen for collecting name
+  UserOnboard: undefined;
+
   // Home screen for creating/joining lists
   Home: undefined;
 
@@ -36,6 +39,11 @@ export type LoadingScreenProps = NativeStackScreenProps<
 export type WelcomeScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'Welcome'
+>;
+
+export type UserOnboardScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'UserOnboard'
 >;
 
 export type HomeScreenProps = NativeStackScreenProps<

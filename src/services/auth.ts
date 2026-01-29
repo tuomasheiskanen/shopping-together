@@ -49,10 +49,22 @@ export async function signOut(): Promise<void> {
 /**
  * Map Firebase user to our User type
  */
+/**
+ * Update the user's display name in Firebase Auth
+ */
+export async function updateDisplayName(displayName: string): Promise<void> {
+  const currentUser = auth().currentUser;
+  if (!currentUser) {
+    throw new Error('Must be authenticated to update display name');
+  }
+  await currentUser.updateProfile({ displayName });
+}
+
 function mapFirebaseUser(firebaseUser: FirebaseAuthTypes.User): User {
   return {
     uid: firebaseUser.uid,
     isAnonymous: firebaseUser.isAnonymous,
     email: firebaseUser.email,
+    displayName: firebaseUser.displayName,
   };
 }

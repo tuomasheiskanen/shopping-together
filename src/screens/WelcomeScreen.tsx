@@ -24,7 +24,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps): React.JSX.Ele
     await AsyncStorage.setItem('hasSeenWelcome', 'true');
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Home' }],
+      routes: [{ name: 'UserOnboard' }],
     });
   };
 

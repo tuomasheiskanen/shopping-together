@@ -25,7 +25,16 @@ export function LoadingScreen({ navigation }: LoadingScreenProps): React.JSX.Ele
 
     const navigateAfterAuth = async () => {
       const hasSeenWelcome = await AsyncStorage.getItem('hasSeenWelcome');
-      const targetScreen = hasSeenWelcome === 'true' ? 'Home' : 'Welcome';
+      const userName = await AsyncStorage.getItem('userName');
+
+      let targetScreen: 'Welcome' | 'UserOnboard' | 'Home';
+      if (hasSeenWelcome !== 'true') {
+        targetScreen = 'Welcome';
+      } else if (!userName) {
+        targetScreen = 'UserOnboard';
+      } else {
+        targetScreen = 'Home';
+      }
 
       navigation.reset({
         index: 0,
@@ -55,7 +64,17 @@ export function LoadingScreen({ navigation }: LoadingScreenProps): React.JSX.Ele
     try {
       await signIn();
       const hasSeenWelcome = await AsyncStorage.getItem('hasSeenWelcome');
-      const targetScreen = hasSeenWelcome === 'true' ? 'Home' : 'Welcome';
+      const userName = await AsyncStorage.getItem('userName');
+
+      let targetScreen: 'Welcome' | 'UserOnboard' | 'Home';
+      if (hasSeenWelcome !== 'true') {
+        targetScreen = 'Welcome';
+      } else if (!userName) {
+        targetScreen = 'UserOnboard';
+      } else {
+        targetScreen = 'Home';
+      }
+
       navigation.reset({
         index: 0,
         routes: [{ name: targetScreen }],

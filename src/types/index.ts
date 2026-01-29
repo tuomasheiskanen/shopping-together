@@ -30,6 +30,7 @@ export interface User {
   uid: string;
   isAnonymous: boolean;
   email?: string | null;
+  displayName?: string | null;
 }
 
 // Document data types (without id, for Firestore writes)
