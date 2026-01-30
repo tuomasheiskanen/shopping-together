@@ -4,9 +4,9 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Platform,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { WelcomeScreenProps } from '@/navigation/types';
 
@@ -20,6 +20,8 @@ const COLORS = {
 };
 
 export function WelcomeScreen({ navigation }: WelcomeScreenProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
+
   const handleGetStarted = async () => {
     await AsyncStorage.setItem('hasSeenWelcome', 'true');
     navigation.reset({
@@ -65,7 +67,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps): React.JSX.Ele
       </View>
 
       {/* Buttons */}
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <TouchableOpacity
           style={styles.getStartedButton}
           onPress={handleGetStarted}
@@ -159,7 +161,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'android' ? 32 : 16,
     gap: 12,
   },
   getStartedButton: {

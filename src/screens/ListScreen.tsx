@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -210,6 +211,11 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     <GestureHandlerRootView style={styles.container}>
       <SyncStatusBar />
 
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+
       {/* Custom Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         {/* Logo row */}
@@ -288,6 +294,8 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
 
       <AddItemInput onSubmit={handleAddItem} />
 
+      </KeyboardAvoidingView>
+
       <EditItemModal
         visible={!!editingItem}
         item={editingItem}
@@ -309,6 +317,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  keyboardView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
