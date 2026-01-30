@@ -53,62 +53,64 @@ export function UserOnboardScreen({ navigation }: UserOnboardScreenProps): React
     <SafeAreaView style={styles.container}>
       <View style={styles.gradientOverlay} />
 
-      {/* Logo */}
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>🛒</Text>
-          <Text style={styles.logoText}>SharedCart</Text>
-        </View>
-      </View>
-
       <KeyboardAvoidingView
-        style={styles.content}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Headline */}
-        <View style={styles.headlineContainer}>
-          <Text style={styles.headlineSerif}>First, let's get to</Text>
-          <Text style={styles.headlineScript}>know you.</Text>
+        {/* Logo */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoIcon}>🛒</Text>
+            <Text style={styles.logoText}>SharedCart</Text>
+          </View>
         </View>
 
-        {/* Input section */}
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>What should we call you?</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Your name..."
-            placeholderTextColor="#bbb"
-            value={name}
-            onChangeText={setName}
-            autoFocus
-            maxLength={50}
-            returnKeyType="done"
-            onSubmitEditing={isValid ? handleContinue : undefined}
-            autoCapitalize="words"
-            editable={!isSubmitting}
-          />
-          {isValid && (
-            <Text style={styles.niceToMeet}>nice to meet you</Text>
-          )}
+        <View style={styles.content}>
+          {/* Headline */}
+          <View style={styles.headlineContainer}>
+            <Text style={styles.headlineSerif}>First, let's get to</Text>
+            <Text style={styles.headlineScript}>know you.</Text>
+          </View>
+
+          {/* Input section */}
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>What should we call you?</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Your name..."
+              placeholderTextColor="#bbb"
+              value={name}
+              onChangeText={setName}
+              autoFocus
+              maxLength={50}
+              returnKeyType="done"
+              onSubmitEditing={isValid ? handleContinue : undefined}
+              autoCapitalize="words"
+              editable={!isSubmitting}
+            />
+            {isValid && (
+              <Text style={styles.niceToMeet}>nice to meet you</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Bottom section */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.continueButton, !isValid && styles.continueButtonDisabled]}
+            onPress={handleContinue}
+            activeOpacity={0.8}
+            disabled={!isValid || isSubmitting}
+          >
+            <Text style={styles.continueButtonText}>
+              {isSubmitting ? 'Saving...' : 'Continue'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.termsText}>
+            By continuing, you agree to our Terms
+          </Text>
         </View>
       </KeyboardAvoidingView>
-
-      {/* Bottom section */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.continueButton, !isValid && styles.continueButtonDisabled]}
-          onPress={handleContinue}
-          activeOpacity={0.8}
-          disabled={!isValid || isSubmitting}
-        >
-          <Text style={styles.continueButtonText}>
-            {isSubmitting ? 'Saving...' : 'Continue'}
-          </Text>
-        </TouchableOpacity>
-        <Text style={styles.termsText}>
-          By continuing, you agree to our Terms
-        </Text>
-      </View>
     </SafeAreaView>
   );
 }
@@ -143,6 +145,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.headlineText,
+  },
+  keyboardView: {
+    flex: 1,
   },
   content: {
     flex: 1,
