@@ -31,18 +31,23 @@ export function AddItemInput({ onSubmit }: AddItemInputProps): React.JSX.Element
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <View style={styles.inputRow}>
-        <TextInput
-          ref={inputRef}
-          style={styles.textInput}
-          placeholder="Add new item..."
-          placeholderTextColor="#999"
-          value={text}
-          onChangeText={setText}
-          onSubmitEditing={handleSubmit}
-          editable={!isLoading}
-          returnKeyType="done"
-          autoCapitalize="sentences"
-        />
+        <View style={styles.inputWrapper}>
+          {isLoading && (
+            <ActivityIndicator size="small" color="#F5A998" style={styles.inlineLoader} />
+          )}
+          <TextInput
+            ref={inputRef}
+            style={[styles.textInput, isLoading && styles.textInputLoading]}
+            placeholder="Add new item..."
+            placeholderTextColor="#999"
+            value={text}
+            onChangeText={setText}
+            onSubmitEditing={handleSubmit}
+            editable
+            returnKeyType="done"
+            autoCapitalize="sentences"
+          />
+        </View>
         <TouchableOpacity
           style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
           onPress={handleSubmit}
@@ -73,14 +78,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 22,
+    height: 44,
+  },
+  inlineLoader: {
+    marginLeft: 14,
+  },
   textInput: {
     flex: 1,
     height: 44,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 22,
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#333',
+  },
+  textInputLoading: {
+    paddingLeft: 8,
   },
   submitButton: {
     width: 40,
