@@ -34,6 +34,8 @@ interface ItemRowProps {
   onEdit: () => void;
   onClaim: () => void;
   onUnclaim: () => void;
+  drag?: () => void;
+  isActive?: boolean;
 }
 
 export function ItemRow({
@@ -44,6 +46,8 @@ export function ItemRow({
   onEdit,
   onClaim,
   onUnclaim,
+  drag,
+  isActive = false,
 }: ItemRowProps): React.JSX.Element {
   const swipeableRef = useRef<Swipeable>(null);
   const pendingOperations = useItemsStore((state) => state.pendingOperations);
@@ -219,7 +223,7 @@ export function ItemRow({
         : null;
 
   return (
-    <View style={styles.cardWrapper}>
+    <View style={[styles.cardWrapper, isActive && styles.cardWrapperActive]}>
       <Swipeable
         ref={swipeableRef}
         renderRightActions={renderRightActions}
@@ -227,12 +231,14 @@ export function ItemRow({
         friction={2}
         rightThreshold={40}
         leftThreshold={40}
+        enabled={!isActive}
       >
         <TouchableOpacity
           style={[styles.container, containerBackground]}
           onPress={isClaimedByMe ? onToggle : isUnclaimed ? onClaim : isClaimedByOther ? undefined : onToggle}
-          onLongPress={onEdit}
+          onLongPress={drag}
           activeOpacity={0.7}
+          disabled={isActive}
         >
           {renderStatusIndicator()}
 
@@ -260,6 +266,14 @@ const styles = StyleSheet.create({
   cardWrapper: {
     marginHorizontal: 16,
     marginVertical: 5,
+  },
+  cardWrapperActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    transform: [{ scale: 1.03 }],
   },
   container: {
     flexDirection: 'row',

@@ -5,7 +5,7 @@ import { useListStore } from './listStore';
 
 // Track pending operations for optimistic updates
 interface PendingOperation {
-  type: 'add' | 'update' | 'delete' | 'toggle';
+  type: 'add' | 'update' | 'delete' | 'toggle' | 'reorder';
   itemId: string;
   timestamp: number;
 }
@@ -24,6 +24,7 @@ interface ItemsActions {
   updateItem: (itemId: string, data: UpdateItemInput) => Promise<void>;
   deleteItem: (itemId: string) => Promise<void>;
   toggleItem: (itemId: string) => Promise<void>;
+  reorderItems: (reorderedItems: Item[]) => Promise<void>;
   clearItems: () => void;
   clearError: () => void;
 }
@@ -58,11 +59,17 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
           return !(pending && pending.type === 'delete');
         });
 
-        set({ items: filteredItems, isLoading: false });
+        // Assign fallback sortOrder for items missing it, then sort
+        const sortedItems = filteredItems.map((item, index) => ({
+          ...item,
+          sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : index,
+        })).sort((a, b) => a.sortOrder - b.sortOrder);
+
+        set({ items: sortedItems, isLoading: false });
 
         // Update list item counts in listStore
-        const itemsTotal = filteredItems.length;
-        const itemsCompleted = filteredItems.filter((item) => item.completed).length;
+        const itemsTotal = sortedItems.length;
+        const itemsCompleted = sortedItems.filter((item) => item.completed).length;
         useListStore.getState().updateListItemCounts(listId, itemsTotal, itemsCompleted);
       },
       (error) => {
@@ -88,6 +95,7 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
       text: input.text,
       quantity: input.quantity,
       completed: false,
+      sortOrder: items.length,
       updatedAt: { toDate: () => new Date() } as any,
     };
 
@@ -213,11 +221,7 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
       updatedPendingOps.delete(itemId);
 
       set({
-        items: [...currentItems, originalItem].sort((a, b) => {
-          const aTime = a.updatedAt?.toDate?.()?.getTime() || 0;
-          const bTime = b.updatedAt?.toDate?.()?.getTime() || 0;
-          return aTime - bTime;
-        }),
+        items: [...currentItems, originalItem].sort((a, b) => a.sortOrder - b.sortOrder),
         pendingOperations: updatedPendingOps,
         error: error instanceof Error ? error.message : 'Failed to delete item',
       });
@@ -273,6 +277,35 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
         items: rollbackItems,
         pendingOperations: updatedPendingOps,
         error: error instanceof Error ? error.message : 'Failed to toggle item',
+      });
+    }
+  },
+
+  reorderItems: async (reorderedItems: Item[]) => {
+    const { listId, items } = get();
+    if (!listId) return;
+
+    const previousItems = items;
+
+    // Optimistic update: apply new order immediately
+    const updatedItems = reorderedItems.map((item, index) => ({
+      ...item,
+      sortOrder: index,
+    }));
+
+    set({ items: updatedItems, error: null });
+
+    try {
+      const orderUpdates = updatedItems.map((item, index) => ({
+        id: item.id,
+        sortOrder: index,
+      }));
+      await itemsService.reorderItems(listId, orderUpdates);
+    } catch (error) {
+      // Rollback to previous order
+      set({
+        items: previousItems,
+        error: error instanceof Error ? error.message : 'Failed to reorder items',
       });
     }
   },

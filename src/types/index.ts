@@ -16,6 +16,7 @@ export interface Item {
   quantity?: number;
   claimedBy?: string;
   completed: boolean;
+  sortOrder: number;
   updatedAt: FirebaseFirestoreTypes.Timestamp;
 }
 
@@ -50,7 +51,7 @@ export interface CreateItemInput {
 
 // Update input types (partial updates)
 export type UpdateListInput = Partial<Pick<List, 'name' | 'archived' | 'linkToken'>>;
-export type UpdateItemInput = Partial<Pick<Item, 'text' | 'quantity' | 'claimedBy' | 'completed'>>;
+export type UpdateItemInput = Partial<Pick<Item, 'text' | 'quantity' | 'claimedBy' | 'completed' | 'sortOrder'>>;
 
 // Firestore converter helper type
 export type FirestoreConverter<T> = {
@@ -81,6 +82,7 @@ export const itemConverter: FirestoreConverter<Item> = {
     quantity: item.quantity,
     claimedBy: item.claimedBy,
     completed: item.completed,
+    sortOrder: item.sortOrder,
     updatedAt: item.updatedAt,
   }),
   fromFirestore: (snapshot) => ({

@@ -2,14 +2,16 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Keyboard,
   KeyboardAvoidingView,
 } from 'react-native';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useListStore, useItemsStore, useAuthStore } from '@/stores';
@@ -55,17 +57,30 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     deleteItem,
     updateItem,
     addItem,
+    reorderItems,
   } = useItemsStore();
   const user = useAuthStore((state) => state.user);
 
   const [refreshing, setRefreshing] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [showShare, setShowShare] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     // Hide the default navigation header
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const unsubscribeList = loadList(listId);
@@ -141,7 +156,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: Item }) => (
+    ({ item, drag, isActive }: RenderItemParams<Item>) => (
       <ItemRow
         item={item}
         userId={user?.uid}
@@ -150,9 +165,18 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
         onEdit={() => handleEditItem(item)}
         onClaim={() => handleClaimItem(item.id)}
         onUnclaim={() => handleUnclaimItem(item.id)}
+        drag={drag}
+        isActive={isActive}
       />
     ),
     [handleToggleItem, handleDeleteItem, handleEditItem, handleClaimItem, handleUnclaimItem, user],
+  );
+
+  const handleDragEnd = useCallback(
+    ({ data }: { data: Item[] }) => {
+      reorderItems(data);
+    },
+    [reorderItems],
   );
 
   const progressStats = useMemo(() => {
@@ -267,32 +291,45 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
       </View>
 
       {/* Items list */}
-      {itemsLoading && items.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={COLORS.coral} />
-        </View>
-      ) : items.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No items yet</Text>
-          <Text style={styles.emptySubtext}>Add your first item below</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={COLORS.coral}
-            />
-          }
+      <View style={styles.listContainer}>
+        {itemsLoading && items.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={COLORS.coral} />
+          </View>
+        ) : items.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No items yet</Text>
+            <Text style={styles.emptySubtext}>Add your first item below</Text>
+          </View>
+        ) : (
+          <DraggableFlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            onDragEnd={handleDragEnd}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={COLORS.coral}
+              />
+            }
+          />
+        )}
+      </View>
+
+      {keyboardVisible && (
+        <Pressable
+          style={styles.keyboardDismissOverlay}
+          onPress={Keyboard.dismiss}
         />
       )}
 
-      <AddItemInput onSubmit={handleAddItem} />
+      <View style={styles.addItemWrapper}>
+        <AddItemInput onSubmit={handleAddItem} />
+      </View>
 
       </KeyboardAvoidingView>
 
@@ -445,6 +482,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.progressText,
     letterSpacing: 0.8,
+  },
+  listContainer: {
+    flex: 1,
+  },
+  keyboardDismissOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  addItemWrapper: {
+    zIndex: 2,
   },
   listContent: {
     flexGrow: 1,

@@ -1,6 +1,11 @@
 import firestore from '@react-native-firebase/firestore';
 import { Item, CreateItemInput, UpdateItemInput } from '@/types';
 
+interface OrderUpdate {
+  id: string;
+  sortOrder: number;
+}
+
 /**
  * Get the items collection reference for a list
  */
@@ -17,11 +22,24 @@ export async function addItem(
 ): Promise<Item> {
   const itemRef = getItemsCollection(listId).doc();
 
+  // Query the current max sortOrder to place new item at the end
+  const maxSnapshot = await getItemsCollection(listId)
+    .orderBy('sortOrder', 'desc')
+    .limit(1)
+    .get();
+
+  let nextSortOrder = 0;
+  if (!maxSnapshot.empty) {
+    const maxSortOrder = maxSnapshot.docs[0].data().sortOrder;
+    nextSortOrder = typeof maxSortOrder === 'number' ? maxSortOrder + 1 : 0;
+  }
+
   const itemData = {
     text: input.text,
     quantity: input.quantity ?? null,
     claimedBy: null,
     completed: false,
+    sortOrder: nextSortOrder,
     updatedAt: firestore.FieldValue.serverTimestamp(),
   };
 
@@ -81,9 +99,7 @@ export async function toggleItemCompleted(
  * Get all items in a list
  */
 export async function getItems(listId: string): Promise<Item[]> {
-  const snapshot = await getItemsCollection(listId)
-    .orderBy('updatedAt', 'asc')
-    .get();
+  const snapshot = await getItemsCollection(listId).get();
 
   return snapshot.docs.map((doc) => ({
     id: doc.id,
@@ -93,7 +109,7 @@ export async function getItems(listId: string): Promise<Item[]> {
 
 /**
  * Subscribe to real-time updates for items
- * Items are ordered by updatedAt ascending (oldest first)
+ * Items are sorted client-side by sortOrder to support drag-to-reorder
  * @returns Unsubscribe function
  */
 export function subscribeToItems(
@@ -102,7 +118,6 @@ export function subscribeToItems(
   onError?: (error: Error) => void,
 ): () => void {
   return getItemsCollection(listId)
-    .orderBy('updatedAt', 'asc')
     .onSnapshot(
       (snapshot) => {
         const items = snapshot.docs.map((doc) => ({
@@ -118,6 +133,23 @@ export function subscribeToItems(
         }
       },
     );
+}
+
+/**
+ * Reorder items by updating their sortOrder values in a batch
+ */
+export async function reorderItems(
+  listId: string,
+  orderUpdates: OrderUpdate[],
+): Promise<void> {
+  const batch = firestore().batch();
+  const collection = getItemsCollection(listId);
+
+  for (const update of orderUpdates) {
+    batch.update(collection.doc(update.id), { sortOrder: update.sortOrder });
+  }
+
+  await batch.commit();
 }
 
 /**
