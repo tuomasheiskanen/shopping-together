@@ -7,8 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useListStore, useItemsStore, useAuthStore } from '@/stores';
 import { createShareUrl } from '@/utils/deepLink';
 import {
@@ -21,8 +23,20 @@ import {
 import type { ListScreenProps } from '@/navigation/types';
 import type { Item } from '@/types';
 
+const COLORS = {
+  coral: '#F5A998',
+  coralLight: '#FDF5F3',
+  white: '#FFFFFF',
+  background: '#f8f8f8',
+  headlineText: '#333',
+  subtitleText: '#666',
+  progressBg: '#F5E6E1',
+  progressText: '#B07A6E',
+};
+
 export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.Element {
   const { listId } = route.params;
+  const insets = useSafeAreaInsets();
   const {
     currentList,
     loadList,
@@ -48,6 +62,11 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
   const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
+    // Hide the default navigation header
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  useEffect(() => {
     const unsubscribeList = loadList(listId);
     const unsubscribeItems = subscribeToItems(listId);
     const unsubscribeParticipants = subscribeToParticipants(listId);
@@ -59,22 +78,12 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     };
   }, [listId, loadList, subscribeToItems, subscribeToParticipants]);
 
-  useEffect(() => {
-    if (currentList) {
-      navigation.setOptions({
-        headerTitle: currentList.name,
-      });
-    }
-  }, [currentList, navigation]);
-
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Re-subscribe to refresh data
     const unsubscribeList = loadList(listId);
     const unsubscribeItems = subscribeToItems(listId);
     const unsubscribeParticipants = subscribeToParticipants(listId);
 
-    // Wait a bit for data to load
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
@@ -114,19 +123,37 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     }
   };
 
+  const handleClaimItem = useCallback(
+    (itemId: string) => {
+      if (user) {
+        updateItem(itemId, { claimedBy: user.uid });
+      }
+    },
+    [user, updateItem],
+  );
+
+  const handleUnclaimItem = useCallback(
+    (itemId: string) => {
+      updateItem(itemId, { claimedBy: null } as any);
+    },
+    [updateItem],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Item }) => (
       <ItemRow
         item={item}
+        userId={user?.uid}
         onToggle={() => handleToggleItem(item.id)}
         onDelete={() => handleDeleteItem(item.id)}
         onEdit={() => handleEditItem(item)}
+        onClaim={() => handleClaimItem(item.id)}
+        onUnclaim={() => handleUnclaimItem(item.id)}
       />
     ),
-    [handleToggleItem, handleDeleteItem, handleEditItem],
+    [handleToggleItem, handleDeleteItem, handleEditItem, handleClaimItem, handleUnclaimItem, user],
   );
 
-  // Calculate progress stats
   const progressStats = useMemo(() => {
     const total = items.length;
     const completed = items.filter((i) => i.completed).length;
@@ -134,11 +161,10 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     return { total, completed, percentage };
   }, [items]);
 
-  // Determine owner display text
   const ownerText = useMemo(() => {
     if (!currentList || !user) return '';
     const isOwner = currentList.ownerId === user.uid;
-    return isOwner ? 'Created by You' : 'Shared with You';
+    return isOwner ? 'You' : 'Shared';
   }, [currentList, user]);
 
   const error = listError || itemsError;
@@ -146,7 +172,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
   if (listLoading && !currentList) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#F5A998" />
+        <ActivityIndicator size="large" color={COLORS.coral} />
       </View>
     );
   }
@@ -184,46 +210,60 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     <GestureHandlerRootView style={styles.container}>
       <SyncStatusBar />
 
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.listName} numberOfLines={1}>
-              {currentList.name}
-            </Text>
-            <Text style={styles.subtitle}>
-              {ownerText} • {memberCount} {memberCount === 1 ? 'member' : 'members'}
-            </Text>
-          </View>
+      {/* Custom Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        {/* Logo row */}
+        <View style={styles.logoRow}>
           <TouchableOpacity
-            onPress={() => setShowShare(true)}
-            style={styles.shareIconButton}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <View style={styles.shareIcon}>
-              <View style={styles.shareIconArrow} />
-              <View style={styles.shareIconBox} />
-            </View>
+            <Text style={styles.backArrow}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.logoIcon}>🛒</Text>
+          <Text style={styles.logoText}>ShoppingTogether</Text>
+        </View>
+
+        {/* List name + share */}
+        <View style={styles.titleRow}>
+          <Text style={styles.listName} numberOfLines={2}>
+            {currentList.name}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowShare(true)}
+            style={styles.shareButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.shareButtonIcon}>↗</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            {progressStats.completed} OF {progressStats.total} ITEMS SECURED
-          </Text>
-          <View style={styles.progressBarBackground}>
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>
+          Created by <Text style={styles.subtitleBold}>{ownerText}</Text> · {memberCount} {memberCount === 1 ? 'member' : 'members'}
+        </Text>
+
+        {/* Progress pill */}
+        {items.length > 0 && (
+          <View style={styles.progressPill}>
             <View
               style={[
-                styles.progressBarFill,
+                styles.progressFill,
                 { width: `${progressStats.percentage}%` },
               ]}
             />
+            <Text style={styles.progressText}>
+              {progressStats.completed} OF {progressStats.total} ITEMS SECURED
+            </Text>
           </View>
-        </View>
+        )}
       </View>
 
+      {/* Items list */}
       {itemsLoading && items.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#F5A998" />
+          <ActivityIndicator size="small" color={COLORS.coral} />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -240,7 +280,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#F5A998"
+              tintColor={COLORS.coral}
             />
           }
         />
@@ -268,7 +308,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
@@ -284,20 +324,20 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.headlineText,
     marginBottom: 8,
   },
   errorSubtext: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.subtitleText,
     textAlign: 'center',
     marginBottom: 20,
   },
   retryButton: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#F5A998',
-    borderRadius: 8,
+    backgroundColor: COLORS.coral,
+    borderRadius: 25,
   },
   retryButtonText: {
     color: '#fff',
@@ -305,87 +345,99 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  headerTop: {
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButton: {
+    marginRight: 8,
+    paddingRight: 4,
+  },
+  backArrow: {
+    fontSize: 32,
+    color: COLORS.headlineText,
+    fontWeight: '300',
+    marginTop: -2,
+  },
+  logoIcon: {
+    fontSize: 20,
+    marginRight: 6,
+  },
+  logoText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.headlineText,
+  },
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 4,
   },
   listName: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 26,
+    fontWeight: '700',
+    color: COLORS.headlineText,
+    flex: 1,
+    marginRight: 12,
+    fontFamily: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+    }),
+  },
+  shareButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  shareButtonIcon: {
+    fontSize: 18,
+    color: COLORS.headlineText,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.subtitleText,
+    marginBottom: 16,
   },
-  shareIconButton: {
-    padding: 8,
+  subtitleBold: {
+    fontWeight: '700',
+    color: COLORS.headlineText,
   },
-  shareIcon: {
-    width: 22,
-    height: 22,
+  progressPill: {
+    height: 32,
+    backgroundColor: COLORS.progressBg,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  shareIconArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#999',
+  progressFill: {
     position: 'absolute',
+    left: 0,
     top: 0,
-  },
-  shareIconBox: {
-    width: 14,
-    height: 10,
-    borderWidth: 2,
-    borderTopWidth: 0,
-    borderColor: '#999',
-    borderRadius: 2,
-    position: 'absolute',
     bottom: 0,
-  },
-  progressContainer: {
-    gap: 8,
+    backgroundColor: COLORS.coral,
+    borderRadius: 16,
+    opacity: 0.3,
   },
   progressText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-    letterSpacing: 0.5,
-  },
-  progressBarBackground: {
-    height: 8,
-    backgroundColor: '#E8E8E8',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#F5A998',
-    borderRadius: 4,
+    fontWeight: '700',
+    color: COLORS.progressText,
+    letterSpacing: 0.8,
   },
   listContent: {
     flexGrow: 1,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 8,
   },
   emptyContainer: {
@@ -395,7 +447,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
+    color: COLORS.subtitleText,
     marginBottom: 4,
   },
   emptySubtext: {
