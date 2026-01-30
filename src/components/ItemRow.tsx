@@ -268,21 +268,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: COLORS.white,
     borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
   },
   containerCompleted: {
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.white,
     opacity: 0.7,
   },
   containerClaimedByMe: {
-    backgroundColor: COLORS.coralLight,
+    backgroundColor: COLORS.white,
   },
   containerUnclaimed: {
-    backgroundColor: COLORS.greenLight,
+    backgroundColor: COLORS.white,
   },
   statusCircle: {
     width: 36,

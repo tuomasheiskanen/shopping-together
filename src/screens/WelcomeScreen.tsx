@@ -16,6 +16,7 @@ const COLORS = {
   headlineText: '#333',
   subtitleText: '#666',
   white: '#FFFFFF',
+  background: '#fdfcf8',
   buttonBorder: '#E8E8E8',
 };
 
@@ -83,7 +84,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps): React.JSX.Ele
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   gradientOverlay: {
     position: 'absolute',

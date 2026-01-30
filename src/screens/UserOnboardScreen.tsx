@@ -20,6 +20,7 @@ const COLORS = {
   headlineText: '#333',
   subtitleText: '#666',
   white: '#FFFFFF',
+  background: '#fdfcf8',
   inputBackground: '#f5f5f5',
   disabledButton: '#ccc',
 };
@@ -118,7 +119,7 @@ export function UserOnboardScreen({ navigation }: UserOnboardScreenProps): React
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   gradientOverlay: {
     position: 'absolute',

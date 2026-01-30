@@ -28,7 +28,7 @@ const COLORS = {
   coral: '#F5A998',
   coralLight: '#FDF5F3',
   white: '#FFFFFF',
-  background: '#f8f8f8',
+  background: '#fdfcf8',
   headlineText: '#333',
   subtitleText: '#666',
   progressBg: '#F5E6E1',
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },

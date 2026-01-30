@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#fdfcf8',
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },

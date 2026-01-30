@@ -22,7 +22,7 @@ const COLORS = {
   headlineText: '#333',
   subtitleText: '#666',
   buttonBorder: '#E8E8E8',
-  background: '#FAFAFA',
+  background: '#fdfcf8',
 };
 
 export function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: Platform.OS === 'android' ? 40 : 16,
     paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   title: {
     fontSize: 24,

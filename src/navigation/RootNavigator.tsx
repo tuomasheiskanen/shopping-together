@@ -48,6 +48,7 @@ export function RootNavigator(): React.JSX.Element {
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
+          contentStyle: { backgroundColor: '#fdfcf8' },
         }}
       >
         <Stack.Screen
