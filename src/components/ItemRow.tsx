@@ -29,6 +29,8 @@ const COLORS = {
 interface ItemRowProps {
   item: Item;
   userId?: string;
+  isShared?: boolean;
+  participantNames?: Record<string, string>;
   onToggle: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -41,6 +43,8 @@ interface ItemRowProps {
 export function ItemRow({
   item,
   userId,
+  isShared = false,
+  participantNames = {},
   onToggle,
   onDelete,
   onEdit,
@@ -83,47 +87,13 @@ export function ItemRow({
     );
   };
 
-  const renderLeftActions = (
-    progress: Animated.AnimatedInterpolation<number>,
-    _dragX: Animated.AnimatedInterpolation<number>,
-  ) => {
-    const translateX = progress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [-80, 0],
-    });
-
-    return (
-      <Animated.View style={[styles.editAction, { transform: [{ translateX }] }]}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => {
-            swipeableRef.current?.close();
-            onEdit();
-          }}
-        >
-          <Text style={styles.editButtonText}>Edit</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
 
   const renderStatusIndicator = () => {
-    if (isCompleted) {
+    if (isClaimedByMe || (isCompleted && item.claimedBy === userId)) {
       return (
-        <View style={[styles.statusCircle, styles.statusCompleted]}>
-          <Text style={styles.checkmark}>✓</Text>
-        </View>
-      );
-    }
-    if (isClaimedByMe) {
-      return (
-        <TouchableOpacity
-          style={[styles.statusCircle, styles.statusClaimedByMe]}
-          onPress={onUnclaim}
-          activeOpacity={0.6}
-        >
+        <View style={[styles.statusCircle, styles.statusClaimedByMe]}>
           <Text style={styles.statusEmoji}>🙋</Text>
-        </TouchableOpacity>
+        </View>
       );
     }
     if (isClaimedByOther) {
@@ -137,17 +107,17 @@ export function ItemRow({
   };
 
   const renderSubtitle = () => {
+    if (!isShared) return null;
+
     const parts: string[] = [];
 
-    if (isCompleted) {
-      if (item.claimedBy === userId) {
-        parts.push('Secured by you');
-      } else if (item.claimedBy) {
-        parts.push('Secured');
-      }
-    } else if (isClaimedByMe) {
-      parts.push("You're picking this up · Tap to unclaim");
-    } else if (isClaimedByOther) {
+    const claimerName = item.claimedBy ? participantNames[item.claimedBy] : undefined;
+
+    if (item.claimedBy === userId) {
+      parts.push('Claimed by you');
+    } else if (claimerName) {
+      parts.push(`Claimed by ${claimerName}`);
+    } else if (item.claimedBy) {
       parts.push('Claimed');
     } else {
       parts.push('Unclaimed');
@@ -183,27 +153,7 @@ export function ItemRow({
       );
     }
 
-    if (isCompleted) {
-      return (
-        <TouchableOpacity style={styles.rightAction} onPress={onToggle}>
-          <View style={[styles.actionCircle, styles.actionCompleted]}>
-            <Text style={styles.actionCheckmark}>✓</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    if (isClaimedByMe) {
-      return (
-        <TouchableOpacity style={styles.rightAction} onPress={onToggle}>
-          <View style={[styles.actionCircle, styles.actionClaimedByMe]}>
-            <Text style={styles.actionCheckmark}>✓</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    if (isUnclaimed) {
+    if (isUnclaimed && isShared) {
       return (
         <TouchableOpacity style={styles.claimButton} onPress={onClaim}>
           <Text style={styles.claimButtonText}>CLAIM</Text>
@@ -211,7 +161,13 @@ export function ItemRow({
       );
     }
 
-    return null;
+    return (
+      <TouchableOpacity style={styles.rightAction} onPress={onToggle}>
+        <View style={[styles.actionCircle, isCompleted ? styles.actionCompleted : styles.actionEmpty]}>
+          {isCompleted && <Text style={styles.actionCheckmark}>✓</Text>}
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   const containerBackground = isCompleted
@@ -227,20 +183,17 @@ export function ItemRow({
       <Swipeable
         ref={swipeableRef}
         renderRightActions={renderRightActions}
-        renderLeftActions={renderLeftActions}
         friction={2}
         rightThreshold={40}
-        leftThreshold={40}
         enabled={!isActive}
       >
         <TouchableOpacity
           style={[styles.container, containerBackground]}
-          onPress={isClaimedByMe ? onToggle : isUnclaimed ? onClaim : isClaimedByOther ? undefined : onToggle}
           onLongPress={drag}
-          activeOpacity={0.7}
+          activeOpacity={1}
           disabled={isActive}
         >
-          {renderStatusIndicator()}
+          {isShared && renderStatusIndicator()}
 
           <View style={styles.textContainer}>
             <Text
@@ -367,10 +320,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionCompleted: {
-    backgroundColor: COLORS.coral,
+    backgroundColor: COLORS.green,
   },
-  actionClaimedByMe: {
-    backgroundColor: COLORS.coral,
+  actionEmpty: {
+    borderWidth: 2,
+    borderColor: '#ddd',
   },
   actionCheckmark: {
     color: COLORS.white,
@@ -406,26 +360,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 14,
   },
   deleteButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  editAction: {
-    width: 80,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginVertical: 5,
-  },
-  editButton: {
-    backgroundColor: COLORS.coral,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    height: '100%',
-    borderTopLeftRadius: 14,
-    borderBottomLeftRadius: 14,
-  },
-  editButtonText: {
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,

@@ -194,6 +194,7 @@ export const useListStore = create<ListStore>((set, get) => ({
           listId,
           user.uid,
           user.isAnonymous ? 'anonymous' : 'account',
+          user.displayName || undefined,
         );
       }
 

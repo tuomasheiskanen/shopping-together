@@ -23,6 +23,7 @@ export interface Item {
 export interface Participant {
   id: string;
   userId: string;
+  displayName?: string;
   joinedAt: FirebaseFirestoreTypes.Timestamp;
   type: 'anonymous' | 'account';
 }
@@ -94,6 +95,7 @@ export const itemConverter: FirestoreConverter<Item> = {
 export const participantConverter: FirestoreConverter<Participant> = {
   toFirestore: (participant) => ({
     userId: participant.userId,
+    displayName: participant.displayName,
     joinedAt: participant.joinedAt,
     type: participant.type,
   }),

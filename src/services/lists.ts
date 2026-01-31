@@ -29,7 +29,7 @@ export async function createList(input: CreateListInput): Promise<List> {
   await listRef.set(listData);
 
   // Add creator as participant
-  await addParticipant(listRef.id, user.uid, user.isAnonymous ? 'anonymous' : 'account');
+  await addParticipant(listRef.id, user.uid, user.isAnonymous ? 'anonymous' : 'account', user.displayName || undefined);
 
   // Return the created list
   const snapshot = await listRef.get();

@@ -16,14 +16,19 @@ export async function addParticipant(
   listId: string,
   userId: string,
   type: 'anonymous' | 'account',
+  displayName?: string,
 ): Promise<Participant> {
   const participantRef = getParticipantsCollection(listId).doc(userId);
 
-  const participantData = {
+  const participantData: Record<string, unknown> = {
     userId, // Store userId as a field for collection group queries
     joinedAt: firestore.FieldValue.serverTimestamp(),
     type,
   };
+
+  if (displayName) {
+    participantData.displayName = displayName;
+  }
 
   await participantRef.set(participantData);
 

@@ -155,11 +155,25 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
     [updateItem],
   );
 
+  const isShared = participants.length > 1;
+
+  const participantNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of participants) {
+      if (p.displayName) {
+        map[p.userId] = p.displayName;
+      }
+    }
+    return map;
+  }, [participants]);
+
   const renderItem = useCallback(
     ({ item, drag, isActive }: RenderItemParams<Item>) => (
       <ItemRow
         item={item}
         userId={user?.uid}
+        isShared={isShared}
+        participantNames={participantNames}
         onToggle={() => handleToggleItem(item.id)}
         onDelete={() => handleDeleteItem(item.id)}
         onEdit={() => handleEditItem(item)}
@@ -169,7 +183,7 @@ export function ListScreen({ route, navigation }: ListScreenProps): React.JSX.El
         isActive={isActive}
       />
     ),
-    [handleToggleItem, handleDeleteItem, handleEditItem, handleClaimItem, handleUnclaimItem, user],
+    [handleToggleItem, handleDeleteItem, handleEditItem, handleClaimItem, handleUnclaimItem, user, isShared, participantNames],
   );
 
   const handleDragEnd = useCallback(
