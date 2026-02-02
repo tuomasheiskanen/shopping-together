@@ -7,6 +7,7 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
+import ReanimatedAnimated, { FadeIn } from 'react-native-reanimated';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Item } from '@/types';
 import { useItemsStore } from '@/stores';
@@ -54,8 +55,10 @@ export function ItemRow({
   isActive = false,
 }: ItemRowProps): React.JSX.Element {
   const swipeableRef = useRef<Swipeable>(null);
+  const isNewItem = useRef(item.id.startsWith('temp_')).current;
   const pendingOperations = useItemsStore((state) => state.pendingOperations);
-  const isPending = pendingOperations.has(item.id);
+  const pendingOp = pendingOperations.get(item.id);
+  const isPendingNonToggle = !!pendingOp && pendingOp.type !== 'toggle';
   const isOptimistic = item.id.startsWith('temp_');
 
   const isCompleted = item.completed;
@@ -145,7 +148,7 @@ export function ItemRow({
   };
 
   const renderRightAction = () => {
-    if (isPending || isOptimistic) {
+    if (isPendingNonToggle || isOptimistic) {
       return (
         <View style={styles.rightAction}>
           <ActivityIndicator size="small" color={COLORS.coral} />
@@ -178,8 +181,13 @@ export function ItemRow({
         ? styles.containerUnclaimed
         : null;
 
+  const Wrapper = isNewItem ? ReanimatedAnimated.View : View;
+  const wrapperProps = isNewItem
+    ? { entering: FadeIn.duration(300) }
+    : {};
+
   return (
-    <View style={[styles.cardWrapper, isActive && styles.cardWrapperActive]}>
+    <Wrapper style={[styles.cardWrapper, isActive && styles.cardWrapperActive]} {...wrapperProps}>
       <Swipeable
         ref={swipeableRef}
         renderRightActions={renderRightActions}
@@ -211,7 +219,7 @@ export function ItemRow({
           {renderRightAction()}
         </TouchableOpacity>
       </Swipeable>
-    </View>
+    </Wrapper>
   );
 }
 

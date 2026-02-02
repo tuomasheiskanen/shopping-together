@@ -22,16 +22,16 @@ export async function addItem(
 ): Promise<Item> {
   const itemRef = getItemsCollection(listId).doc();
 
-  // Query the current max sortOrder to place new item at the end
-  const maxSnapshot = await getItemsCollection(listId)
-    .orderBy('sortOrder', 'desc')
+  // Query the current min sortOrder to place new item at the top
+  const minSnapshot = await getItemsCollection(listId)
+    .orderBy('sortOrder', 'asc')
     .limit(1)
     .get();
 
   let nextSortOrder = 0;
-  if (!maxSnapshot.empty) {
-    const maxSortOrder = maxSnapshot.docs[0].data().sortOrder;
-    nextSortOrder = typeof maxSortOrder === 'number' ? maxSortOrder + 1 : 0;
+  if (!minSnapshot.empty) {
+    const minSortOrder = minSnapshot.docs[0].data().sortOrder;
+    nextSortOrder = typeof minSortOrder === 'number' ? minSortOrder - 1 : 0;
   }
 
   const itemData = {
@@ -74,23 +74,15 @@ export async function deleteItem(listId: string, itemId: string): Promise<void> 
 }
 
 /**
- * Toggle the completed state of an item
+ * Set the completed state of an item
  */
 export async function toggleItemCompleted(
   listId: string,
   itemId: string,
+  completed: boolean,
 ): Promise<void> {
-  const itemRef = getItemsCollection(listId).doc(itemId);
-  const snapshot = await itemRef.get();
-
-  if (!snapshot.exists) {
-    throw new Error('Item not found');
-  }
-
-  const currentCompleted = snapshot.data()?.completed ?? false;
-
-  await itemRef.update({
-    completed: !currentCompleted,
+  await getItemsCollection(listId).doc(itemId).update({
+    completed,
     updatedAt: firestore.FieldValue.serverTimestamp(),
   });
 }

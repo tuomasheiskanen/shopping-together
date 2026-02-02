@@ -90,12 +90,15 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
     const tempId = generateTempId();
 
     // Optimistic update: add item immediately with temp ID
+    const sortOrders = items.map((i) => i.sortOrder);
+    const minSortOrder = sortOrders.length > 0 ? Math.min(...sortOrders) : 0;
+
     const optimisticItem: Item = {
       id: tempId,
       text: input.text,
       quantity: input.quantity,
       completed: false,
-      sortOrder: items.length,
+      sortOrder: minSortOrder - 1,
       updatedAt: { toDate: () => new Date() } as any,
     };
 
@@ -107,7 +110,7 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
     });
 
     set({
-      items: [...items, optimisticItem],
+      items: [optimisticItem, ...items],
       pendingOperations: newPendingOps,
       error: null,
     });
@@ -256,7 +259,7 @@ export const useItemsStore = create<ItemsStore>((set, get) => ({
     });
 
     try {
-      await itemsService.toggleItemCompleted(listId, itemId);
+      await itemsService.toggleItemCompleted(listId, itemId, newCompleted);
       // Real-time listener will confirm the update
       const updatedPendingOps = new Map(get().pendingOperations);
       updatedPendingOps.delete(itemId);
