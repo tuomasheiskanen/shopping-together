@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   Platform,
   KeyboardAvoidingView,
+  ScrollView,
+  Keyboard,
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,6 +31,24 @@ export function UserOnboardScreen({ navigation }: UserOnboardScreenProps): React
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { setDisplayName } = useAuthStore();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const isValid = name.trim().length > 0;
 
@@ -54,23 +74,29 @@ export function UserOnboardScreen({ navigation }: UserOnboardScreenProps): React
     <SafeAreaView style={styles.container}>
       <View style={styles.gradientOverlay} />
 
+      {/* Logo */}
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoIcon}>🛒</Text>
+          <Text style={styles.logoText}>SharedCart</Text>
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
       >
-        {/* Logo */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>🛒</Text>
-            <Text style={styles.logoText}>SharedCart</Text>
-          </View>
-        </View>
-
-        <View style={styles.content}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
           {/* Headline */}
-          <View style={styles.headlineContainer}>
-            <Text style={styles.headlineSerif}>First, let's get to</Text>
-            <Text style={styles.headlineScript}>know you.</Text>
+          <View style={[styles.headlineContainer, keyboardVisible && styles.headlineContainerCompact]}>
+            <Text style={[styles.headlineSerif, keyboardVisible && styles.headlineSerifCompact]}>First, let's get to</Text>
+            <Text style={[styles.headlineScript, keyboardVisible && styles.headlineScriptCompact]}>know you.</Text>
           </View>
 
           {/* Input section */}
@@ -93,7 +119,8 @@ export function UserOnboardScreen({ navigation }: UserOnboardScreenProps): React
               <Text style={styles.niceToMeet}>nice to meet you</Text>
             )}
           </View>
-        </View>
+
+        </ScrollView>
 
         {/* Bottom section */}
         <View style={styles.buttonContainer}>
@@ -150,14 +177,21 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 32,
+    paddingBottom: 32,
   },
   headlineContainer: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  headlineContainerCompact: {
+    marginBottom: 16,
   },
   headlineSerif: {
     fontSize: 38,
@@ -170,12 +204,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 48,
   },
+  headlineSerifCompact: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
   headlineScript: {
     fontSize: 48,
     color: COLORS.coral,
     fontFamily: 'DancingScript-Bold',
     textAlign: 'center',
     marginTop: -4,
+  },
+  headlineScriptCompact: {
+    fontSize: 30,
+    marginTop: -2,
   },
   inputSection: {
     alignItems: 'center',
